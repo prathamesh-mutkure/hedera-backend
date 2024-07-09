@@ -59,6 +59,7 @@ export class OrganizationService {
             userId: true,
           },
         },
+        OrgProfile: true,
       },
     });
 
@@ -108,7 +109,7 @@ export class OrganizationService {
     orgId: number;
     data: UpdateOrgProfileDTO;
   }) {
-    const org = await this.prisma.orgProfile.update({
+    const orgProfile = await this.prisma.orgProfile.update({
       where: {
         orgId,
       },
@@ -117,7 +118,7 @@ export class OrganizationService {
       },
     });
 
-    return org;
+    return orgProfile;
   }
 
   async addUserToOrg({

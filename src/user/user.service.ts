@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
+import { UpdateUserProfileDTO } from './dto/update-profile.dto';
 
 @Injectable()
 export class UserService {
@@ -23,14 +24,43 @@ export class UserService {
     return newUser;
   }
 
-  async findById(id: number): Promise<User | null> {
+  async findById(
+    id: number,
+  ): Promise<Omit<User, 'password' | 'publicKey'> | null> {
     const user = await this.prisma.user.findUnique({
       where: {
         id,
       },
+      select: {
+        id: true,
+        email: true,
+        walletAddress: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     return user;
+  }
+
+  async findByIdDetailed(id: number) {
+    const org = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        Organizations: {
+          select: {
+            orgId: true,
+          },
+        },
+        Profile: true,
+      },
+    });
+
+    delete org?.password;
+
+    return org;
   }
 
   async findByIdForReq(
@@ -60,5 +90,24 @@ export class UserService {
     });
 
     return user;
+  }
+
+  async updateProfile({
+    userId,
+    data,
+  }: {
+    userId: number;
+    data: UpdateUserProfileDTO;
+  }) {
+    const userProfile = await this.prisma.userProfile.update({
+      where: {
+        userId,
+      },
+      data: {
+        ...data,
+      },
+    });
+
+    return userProfile;
   }
 }
