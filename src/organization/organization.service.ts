@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, Organization } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 
@@ -23,12 +27,41 @@ export class OrganizationService {
     return newOrg;
   }
 
-  async findById(id: number): Promise<Organization | null> {
+  async findById(
+    id: number,
+  ): Promise<Omit<Organization, 'password' | 'publicKey'> | null> {
     const org = await this.prisma.organization.findUnique({
       where: {
         id,
       },
+      select: {
+        id: true,
+        email: true,
+        walletAddress: true,
+        orgContractId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
+
+    return org;
+  }
+
+  async findByIdDetailed(id: number) {
+    const org = await this.prisma.organization.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        Users: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+
+    delete org?.password;
 
     return org;
   }
@@ -62,6 +95,45 @@ export class OrganizationService {
       },
     });
 
+    delete org?.password;
+
     return org;
+  }
+
+  async addUserToOrg({
+    userEmail,
+    orgId,
+  }: {
+    userEmail: string;
+    orgId: number;
+  }) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: userEmail,
+      },
+      select: {
+        id: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const orgUser = await this.prisma.userOrganisations.create({
+      data: {
+        orgId,
+        userId: user.id,
+      },
+    });
+
+    if (!orgUser) {
+      throw new InternalServerErrorException(
+        'Failed to add user to organization',
+      );
+    }
+
+    return orgUser;
   }
 }
