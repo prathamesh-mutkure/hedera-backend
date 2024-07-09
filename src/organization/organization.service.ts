@@ -14,6 +14,9 @@ export class OrganizationService {
       data: {
         walletAddress,
         publicKey,
+        OrgProfile: {
+          create: {},
+        },
       },
     });
 
