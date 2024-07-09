@@ -36,13 +36,14 @@ model Profile {
 }
 
 model Organization {
-  id       Int    @id @default(autoincrement())
-  password String
-  email    String @unique
+  id       Int     @id @default(autoincrement())
+  password String?
+  email    String? @unique
 
-  orgContractId String @unique
   publicKey     String @unique
-  walletAdd     String @unique
+  walletAddress String @unique
+
+  orgContractId String? @unique
 
   Users UserOrganisations[]
 

@@ -1,9 +1,13 @@
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Request } from 'express';
-import { User } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -15,8 +19,8 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(req: Request): Promise<User> {
-    const { data, publicKey, signature, walletAddress } = req.body;
+  async validate(req: Request): Promise<User | Organization> {
+    const { data, publicKey, signature, walletAddress, type } = req.body;
 
     const isValidSignature = await this.authService.validateSignature({
       data,
@@ -29,17 +33,40 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid signature');
     }
 
-    const user = await this.authService.getOrCreateUser(
-      walletAddress,
-      publicKey,
-    );
-
-    if (!user) {
-      throw new UnauthorizedException(
-        'Failed to find or create user, please try again.',
+    if (!type) {
+      throw new BadRequestException(
+        'Please provide user type, either user or organisation',
       );
     }
 
-    return user;
+    if (type === 'USER') {
+      const user = await this.authService.getOrCreateUser(
+        walletAddress,
+        publicKey,
+      );
+
+      if (!user) {
+        throw new UnauthorizedException(
+          'Failed to find or create user, please try again.',
+        );
+      }
+
+      return user;
+    } else if (type === 'ORGANIZATION') {
+      const org = await this.authService.getOrCreateOrg(
+        walletAddress,
+        publicKey,
+      );
+
+      if (!org) {
+        throw new UnauthorizedException(
+          'Failed to find or create organization, please try again.',
+        );
+      }
+
+      return org;
+    }
+
+    throw new BadRequestException('Invalid user type');
   }
 }

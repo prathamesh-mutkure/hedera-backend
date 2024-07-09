@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { base64ToUint8Array } from 'src/lib/utils';
-import { User } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
+import { OrganizationService } from 'src/organization/organization.service';
 
 class VerifyDTO {
   publicKey: string;
@@ -15,6 +16,7 @@ class VerifyDTO {
 export class AuthService {
   constructor(
     private usersService: UserService,
+    private orgService: OrganizationService,
     private jwtService: JwtService,
   ) {}
 
@@ -64,18 +66,37 @@ export class AuthService {
   async getOrCreateUser(
     walletAddress: string,
     publicKey: string,
-  ): Promise<User> {
+  ): Promise<User & { type: 'USER' | 'ORGANIZATION' }> {
     const user = await this.usersService.findByAddress(walletAddress);
 
     if (user) {
-      return user;
+      return { ...user, type: 'USER' };
     }
 
-    return this.usersService.create({ walletAddress, publicKey });
+    const org = await this.usersService.create({ walletAddress, publicKey });
+
+    return { ...org, type: 'USER' };
   }
 
-  async login(user: User) {
-    const payload = { id: user.id };
+  async getOrCreateOrg(
+    walletAddress: string,
+    publicKey: string,
+  ): Promise<User & { type: 'ORGANIZATION' }> {
+    const org = await this.orgService.findByAddress(walletAddress);
+
+    if (org) {
+      return { ...org, type: 'ORGANIZATION' };
+    }
+
+    const newOrg = await this.orgService.create({ walletAddress, publicKey });
+
+    return { ...newOrg, type: 'ORGANIZATION' };
+  }
+
+  async login(
+    entity: (User | Organization) & { type: 'USER' | 'ORGANIZATION' },
+  ): Promise<{ access_token: string }> {
+    const payload = { id: entity.id, type: entity.type };
 
     return {
       access_token: this.jwtService.sign(payload),
