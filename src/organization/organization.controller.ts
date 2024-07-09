@@ -5,8 +5,13 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { AddUserToOrgDTO } from './dto/add-user-to-org.dto';
 
 @Controller('organization')
 export class OrganizationController {
@@ -23,11 +28,11 @@ export class OrganizationController {
   }
 
   @Patch('/user')
-  async addUserToOrg(
-    @Body() { userEmail, orgId }: { userEmail: string; orgId: number },
-  ) {
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  async addUserToOrg(@Body() { userEmail }: AddUserToOrgDTO, @Request() req) {
     return this.organizationService.addUserToOrg({
-      orgId,
+      orgId: req.user.id,
       userEmail,
     });
   }
