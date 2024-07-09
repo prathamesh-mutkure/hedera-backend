@@ -12,6 +12,7 @@ import { OrganizationService } from './organization.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { AddUserToOrgDTO } from './dto/add-user-to-org.dto';
+import { UpdateOrgProfileDTO } from './dto/update-profile.dto';
 
 @Controller('organization')
 export class OrganizationController {
@@ -25,6 +26,16 @@ export class OrganizationController {
   @Get(':id/detailed')
   async getByIdDetailed(@Param('id', ParseIntPipe) id: number) {
     return this.organizationService.findByIdDetailed(id);
+  }
+
+  @Patch('/profile')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  async updateOrgProfile(@Body() body: UpdateOrgProfileDTO, @Request() req) {
+    return this.organizationService.updateProfile({
+      orgId: req.user.id,
+      data: body,
+    });
   }
 
   @Patch('/user')

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, Organization } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
+import { UpdateOrgProfileDTO } from './dto/update-profile.dto';
 
 @Injectable()
 export class OrganizationService {
@@ -96,6 +97,25 @@ export class OrganizationService {
     });
 
     delete org?.password;
+
+    return org;
+  }
+
+  async updateProfile({
+    orgId,
+    data,
+  }: {
+    orgId: number;
+    data: UpdateOrgProfileDTO;
+  }) {
+    const org = await this.prisma.orgProfile.update({
+      where: {
+        orgId,
+      },
+      data: {
+        ...data,
+      },
+    });
 
     return org;
   }
