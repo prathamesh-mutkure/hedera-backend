@@ -1,0 +1,56 @@
+<html>
+  <script>
+    function uint8ArrayToBase64(array) {
+      return btoa(String.fromCharCode.apply(null, [...array]));
+    }
+
+    function base64ToUint8Array(base64) {
+      return new Uint8Array([...atob(base64)].map((c) => c.charCodeAt(0)));
+    }
+
+    async function connect() {
+      await window.arweaveWallet.connect([
+        'ACCESS_ADDRESS',
+        'SIGNATURE',
+        'ACCESS_PUBLIC_KEY',
+      ]);
+      const address = await window.arweaveWallet.getActiveAddress();
+
+      document.getElementById('address').innerText = address;
+    }
+
+    async function sign() {
+      const data = new TextEncoder().encode(address.innerText);
+      const signature = await window.arweaveWallet.signMessage(data);
+
+      fetch('http://localhost:8000/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: uint8ArrayToBase64(data),
+          signature: uint8ArrayToBase64(signature),
+          publicKey: await window.arweaveWallet.getActivePublicKey(),
+          walletAddress: address.innerText,
+          username: 'x',
+          password: 'x',
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          document.getElementById('signature').innerText = JSON.stringify(
+            data?.access_token,
+          );
+        });
+    }
+  </script>
+
+  <body>
+    <button onclick="connect()">Connect Wallet</button>
+    <p id="address"></p>
+
+    <button onclick="sign()">sign address</button>
+    <p id="signature"></p>
+  </body>
+</html>
