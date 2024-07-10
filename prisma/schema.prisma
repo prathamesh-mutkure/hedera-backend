@@ -19,8 +19,10 @@ model User {
   Profile       UserProfile?
   Organizations UserOrganisations[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  PayrollEntry PayrollEntry[]
+  Payment      Payment[]
 }
 
 model UserProfile {
@@ -51,6 +53,7 @@ model Organization {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Payroll   Payroll?
 }
 
 model OrgProfile {
@@ -79,4 +82,97 @@ model UserOrganisations {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, orgId])
+}
+
+model Payroll {
+  id             Int    @id @default(autoincrement())
+  name           String
+  organizationId Int    @unique
+
+  state          PayrollState       @default(ACTIVE)
+  paymentType    PayrollPaymentType
+  recurringDates DateTime[]
+
+  organization    Organization      @relation(fields: [organizationId], references: [id])
+  PayrollEntry    PayrollEntry[]
+  PayrollInstance PayrollInstance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PayrollEntry {
+  id Int @id @default(autoincrement())
+
+  payrollId Int
+  userId    Int
+
+  amount Float
+  token  String
+
+  isPaid Boolean   @default(false)
+  paidAt DateTime?
+
+  payroll Payroll @relation(fields: [payrollId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PayrollInstance {
+  id        Int      @id @default(autoincrement())
+  payrollId Int
+  date      DateTime
+
+  payments Payment[]
+  payroll  Payroll   @relation(fields: [payrollId], references: [id])
+
+  status PayrollInstanceStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  userId            Int
+  payrollInstanceId Int
+
+  amount Float
+  status PaymentStatus @default(PENDING)
+  txHash String?
+  paidAt DateTime?
+
+  payrollInstance PayrollInstance @relation(fields: [payrollInstanceId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PayrollState {
+  ACTIVE
+  INACTIVE
+}
+
+enum PayrollPaymentType {
+  RECURRING
+  ONE_TIME
+}
+
+enum PayrollInstanceStatus {
+  PENDING
+  PROCESSING
+  PAID
+  PARTIALLY_PAID
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
 }
