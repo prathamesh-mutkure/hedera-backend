@@ -7,6 +7,7 @@ import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { PaymentModule } from './payment/payment.module';
+import { StellarModule } from './stellar/stellar.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PaymentModule } from './payment/payment.module';
     AuthModule,
     PayrollModule,
     PaymentModule,
+    StellarModule,
   ],
   controllers: [AppController],
   providers: [],

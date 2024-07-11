@@ -29,6 +29,7 @@
     "@nestjs/serve-static": "^4.0.2",
     "@nestjs/swagger": "^7.4.0",
     "@prisma/client": "^5.16.2",
+    "@stellar/typescript-wallet-sdk": "^1.7.0",
     "class-validator": "^0.14.1",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
