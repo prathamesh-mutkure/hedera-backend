@@ -7,41 +7,103 @@ import {
   Delete,
   UseGuards,
   Request,
+  Body,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PayrollService } from './payroll.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CreatePayrollDTO } from './dto/create-payroll.dto';
+import { AddUserToPayrollDTO } from './dto/add-user-to-payroll.dto';
 
 @Controller('payroll')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
 export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
   @Post()
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard)
-  create(@Request() req: Request) {
+  create(@Request() req: Request, @Body() body: CreatePayrollDTO) {
     // @ts-ignore-next-line
-    // console.log(req.user);
-    return this.payrollService.create();
+    const orgId: number = req.user.id;
+
+    return this.payrollService.create({
+      name: body.name,
+      organizationId: orgId,
+      paymentType: body.paymentType,
+      recurringDates: body.recurringDates,
+      users: body.users,
+    });
   }
 
-  @Get()
-  findAll() {
-    return this.payrollService.findAll();
+  @Post(':payrollId/add/user')
+  addUserToPayroll(
+    @Request() req: Request,
+    @Param('payrollId', ParseIntPipe) payrollId: number,
+    @Body() body: AddUserToPayrollDTO,
+  ) {
+    // @ts-ignore-next-line
+    const orgId: number = req.user.id;
+
+    return this.payrollService.addUserToPayroll({
+      payrollId,
+      orgId,
+      user: {
+        id: body.id,
+        amount: body.amount,
+        token: body.token,
+      },
+    });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.payrollService.findOne(+id);
+  @Get(':payrollId/new/instance')
+  createPayrollInstance(
+    @Request() req: Request,
+    @Param('payrollId', ParseIntPipe) payrollId: number,
+  ) {
+    // @ts-ignore-next-line
+    const orgId: number = req.user.id;
+
+    return this.payrollService.createPayrollInstance({
+      payrollId,
+      orgId,
+    });
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string) {
-    return this.payrollService.update(+id);
+  @Get('/instance/:payrollInstanceId/payments/generate')
+  generatePaymentsForInstance(
+    @Request() req: Request,
+    @Param('payrollInstanceId', ParseIntPipe) payrollInstanceId: number,
+  ) {
+    // @ts-ignore-next-line
+    const orgId: number = req.user.id;
+
+    return this.payrollService.generatePaymentsForInstance({
+      payrollInstanceId,
+      orgId,
+    });
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.payrollService.remove(+id);
+  @Get('/instance/:payrollInstanceId/payments/trigger')
+  triggerPaymentsForInstance(
+    @Request() req: Request,
+    @Param('payrollInstanceId', ParseIntPipe) payrollInstanceId: number,
+  ) {
+    // @ts-ignore-next-line
+    // const orgId: number = req.user.id;
+
+    return this.payrollService.triggerPaymentsForInstance({
+      payrollInstanceId,
+    });
+  }
+
+  @Get('/:payrollId')
+  findOne(@Param('payrollId') payrollId: number) {
+    return this.payrollService.findOne(payrollId);
+  }
+
+  @Get('/org/:orgId')
+  findByOrg(@Param('orgId', ParseIntPipe) orgId: number) {
+    return this.payrollService.findByOrg({ orgId });
   }
 }

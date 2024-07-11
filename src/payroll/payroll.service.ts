@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PayrollPaymentType } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
+import { CreatePayrollDTO } from './dto/create-payroll.dto';
 
 @Injectable()
 export class PayrollService {
@@ -17,17 +18,7 @@ export class PayrollService {
     paymentType,
     recurringDates,
     users,
-  }: {
-    name: string;
-    organizationId: number;
-    paymentType: PayrollPaymentType;
-    recurringDates: Date[];
-    users: {
-      id: number;
-      amount: number;
-      token: string;
-    }[];
-  }) {
+  }: CreatePayrollDTO & { organizationId: number }) {
     // Checks if the users exists in the organization
     const orgUsers = await this.prisma.userOrganisations.findMany({
       where: {
@@ -151,7 +142,35 @@ export class PayrollService {
     return payrollEntry;
   }
 
-  async createPayrollInstance({ payrollId }: { payrollId: number }) {
+  async createPayrollInstance({
+    payrollId,
+    orgId,
+  }: {
+    payrollId: number;
+    orgId: number;
+  }) {
+    const payroll = await this.prisma.payroll.findUnique({
+      where: {
+        id: payrollId,
+      },
+      select: {
+        id: true,
+        organizationId: true,
+      },
+    });
+
+    if (!payroll) {
+      throw new NotFoundException(
+        `Payroll with id ${payrollId} does not exist`,
+      );
+    }
+
+    if (payroll.organizationId !== orgId) {
+      throw new UnauthorizedException(
+        `This payroll does not belong to the organization with id ${orgId}`,
+      );
+    }
+
     const payrollInstance = await this.prisma.payrollInstance.create({
       data: {
         Payroll: {
@@ -166,8 +185,10 @@ export class PayrollService {
 
   async generatePaymentsForInstance({
     payrollInstanceId,
+    orgId,
   }: {
     payrollInstanceId: number;
+    orgId: number;
   }) {
     const payrollInstance = await this.prisma.payrollInstance.findUnique({
       where: { id: payrollInstanceId },
@@ -179,6 +200,11 @@ export class PayrollService {
                 User: true,
               },
             },
+            Organization: {
+              select: {
+                id: true,
+              },
+            },
           },
         },
       },
@@ -186,6 +212,12 @@ export class PayrollService {
 
     if (!payrollInstance) {
       throw new Error('Payroll instance not found');
+    }
+
+    if (payrollInstance.Payroll.Organization.id !== orgId) {
+      throw new UnauthorizedException(
+        `This payroll instance does not belong to the organization with id ${orgId}`,
+      );
     }
 
     const payments = payrollInstance.Payroll.PayrollEntry.map((entry) => ({
@@ -204,6 +236,7 @@ export class PayrollService {
   }: {
     payrollInstanceId: number;
   }) {
+    // TODO: Admin or Org Check
     // Get all pening payments for the payroll instance
     const payments = await this.prisma.payment.findMany({
       where: {
@@ -278,33 +311,48 @@ export class PayrollService {
           has: today,
         },
       },
+      include: {
+        Organization: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
 
     for (const payroll of recurringPayrolls) {
       const instance = await this.createPayrollInstance({
         payrollId: payroll.id,
+        orgId: payroll.organizationId,
       });
 
       await this.generatePaymentsForInstance({
         payrollInstanceId: instance.id,
+        orgId: payroll.organizationId,
       });
       await this.triggerPaymentsForInstance({ payrollInstanceId: instance.id });
     }
   }
 
-  findAll() {
-    return `This action returns all payroll`;
+  async findOne(id: number) {
+    const payroll = await this.prisma.payroll.findMany({
+      where: {
+        id,
+      },
+    });
+
+    if (!payroll) {
+      throw new NotFoundException(`Payroll with id ${id} does not exist`);
+    }
+
+    return payroll;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} payroll`;
-  }
-
-  update(id: number) {
-    return `This action updates a #${id} payroll`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} payroll`;
+  findByOrg({ orgId }: { orgId: number }) {
+    return this.prisma.payroll.findMany({
+      where: {
+        organizationId: orgId,
+      },
+    });
   }
 }
