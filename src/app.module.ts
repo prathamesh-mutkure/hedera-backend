@@ -6,6 +6,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
 import { PayrollModule } from './payroll/payroll.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PayrollModule } from './payroll/payroll.module';
     UserModule,
     AuthModule,
     PayrollModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [],

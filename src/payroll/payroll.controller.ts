@@ -56,7 +56,7 @@ export class PayrollController {
     });
   }
 
-  @Get(':payrollId/new/instance')
+  @Get(':payrollId/instance/new')
   createPayrollInstance(
     @Request() req: Request,
     @Param('payrollId', ParseIntPipe) payrollId: number,
