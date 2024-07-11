@@ -1,118 +1,54 @@
 import { Injectable } from '@nestjs/common';
-import {
-  AccountService,
-  Stellar,
-  StellarConfiguration,
-  Wallet,
-  AccountKeypair,
-  Keypair,
-  SigningKeypair,
-} from '@stellar/typescript-wallet-sdk';
-import { randomBytes } from 'crypto';
-import { base64ToUint8Array, uint8ArrayToBase64 } from 'src/lib/utils';
+import { Keypair } from '@stellar/stellar-sdk';
+import * as StellarSdk from '@stellar/stellar-sdk';
+import { AccountResponse } from '@stellar/stellar-sdk/lib/horizon';
 
 @Injectable()
 export class StellarService {
-  private readonly wallet: Wallet;
-  private readonly stellar: Stellar;
-  private readonly account: AccountService;
-  private readonly keyPair: SigningKeypair;
+  private readonly server: StellarSdk.Horizon.Server;
+  private readonly keyPair: Keypair;
+  private readonly account: AccountResponse;
 
   constructor() {
-    // const wallet = new Wallet({
-    //   stellarConfiguration: StellarConfiguration.TestNet(),
-    // });
+    const server = new StellarSdk.Horizon.Server(
+      'https://horizon-testnet.stellar.org',
+    );
 
-    // const stellar = wallet.stellar();
-    // const account = stellar.account();
+    const keyPair = Keypair.fromSecret(
+      'SBLPGXDOED4PRS4J42UYPLS5BENQFKV5HMACAHMDCUD3TNGVF7UYFFO4',
+    );
 
-    // console.log('hehe');
-
-    // const keyPair = StellarService.recoverKeyPairFromBase64({
-    //   account,
-    //   base64: '6SogqfWVNvLRAJs7WRtofxKxSkQ=',
-    // });
-
-    // console.log('nkn');
-
-    const { wallet, stellar, account, keyPair } = StellarService.buildAcc();
-
-    this.wallet = wallet;
-    this.stellar = stellar;
-    this.account = account;
+    this.server = server;
     this.keyPair = keyPair;
   }
 
-  private static buildAcc() {
-    const wallet = new Wallet({
-      stellarConfiguration: StellarConfiguration.TestNet(),
-    });
-
-    const stellar = wallet.stellar();
-    const account = stellar.account();
-
-    const keyPair = StellarService.recoverKeyPairFromBase64({
-      account,
-      base64: '1TLGwUGyq7qFBcw40koBw18DW5lVqaJtpDtl3I9UrEg=',
-    });
-
-    return {
-      wallet,
-      stellar,
-      account,
-      keyPair,
-    };
+  async loadAccount() {
+    const account = await this.server.loadAccount(this.keyPair.publicKey());
+    return account;
   }
 
-  // Create a new key pair
-  // Not for use in production
-  private static generateNewKeyPair({ account }: { account: AccountService }) {
-    const rand = randomBytes(32);
-    const keyPair = account.createKeypairFromRandom(Buffer.from(rand));
+  private static async fundAccount(keyPair: Keypair) {
+    try {
+      const response = await fetch(
+        `https://friendbot.stellar.org?addr=${encodeURIComponent(
+          keyPair.publicKey(),
+        )}`,
+      );
 
-    console.log(`Base64 - "${uint8ArrayToBase64(rand)}"`);
-    console.log(`PK - "${keyPair.publicKey}"`);
-    console.log(`SK - "${keyPair.secretKey}"`);
+      const data: any = await response.json();
+      const publicKey = data.source_account;
 
-    return keyPair;
+      console.log('New account created -', publicKey);
+
+      return true;
+    } catch (error) {
+      console.error('Error funding account', error);
+      return false;
+    }
   }
 
-  // This method will be used to recover a key pair from a secret base64 string.
-  // TODO: seed phase to base64 support
-  static recoverKeyPairFromBase64({
-    base64,
-    account,
-  }: {
-    base64: string;
-    account: AccountService;
-  }) {
-    const keyPair = account.createKeypairFromRandom(
-      Buffer.from(base64ToUint8Array(base64)),
-    );
-
-    return keyPair;
-  }
-
-  async test() {
-    // console.log(this.keyPair);
-    // const txBuilder = await this.stellar.transaction({
-    //   sourceAddress: this.keyPair,
-    // });
-    // const tx = txBuilder.createAccount(this.keyPair).build();
-    // StellarService.generateNewKeyPair({
-    //   account: this.account,
-    // });
-    // const kp = StellarService.recoverKeyPairFromBase64({
-    //   base64: '1TLGwUGyq7qFBcw40koBw18DW5lVqaJtpDtl3I9UrEg=',
-    //   account: this.account,
-    // });
-    //
-    // const kp = this.keyPair;
-    // console.log(kp.publicKey);
-    // console.log(kp.secretKey);
-    //
-    // Base64 - "1TLGwUGyq7qFBcw40koBw18DW5lVqaJtpDtl3I9UrEg="
-    // PK - "GBLPHQ4IH45EJ4J3D7FO2WGECCFGINRT3EYFJ5IDA6Q5NFV2NTCTRYUF"
-    // SK - "SDKTFRWBIGZKXOUFAXGDRUSKAHBV6A23TFK2TITNUQ5WLXEPKSWERN3N"
-  }
+  async test() {}
 }
+
+// PK - GAKK3J2FUPRA7JM3GVZWG7VUZGQ5FERXWXVNWHSZ2OIT57J3IR2B4WH2
+// SK - SBLPGXDOED4PRS4J42UYPLS5BENQFKV5HMACAHMDCUD3TNGVF7UYFFO4
