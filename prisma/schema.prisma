@@ -93,7 +93,7 @@ model Payroll {
   paymentType    PayrollPaymentType
   recurringDates DateTime[]
 
-  organization    Organization      @relation(fields: [organizationId], references: [id])
+  Organization    Organization      @relation(fields: [organizationId], references: [id])
   PayrollEntry    PayrollEntry[]
   PayrollInstance PayrollInstance[]
 
@@ -113,8 +113,8 @@ model PayrollEntry {
   isPaid Boolean   @default(false)
   paidAt DateTime?
 
-  payroll Payroll @relation(fields: [payrollId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  Payroll Payroll @relation(fields: [payrollId], references: [id])
+  User    User    @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,10 +125,10 @@ model PayrollInstance {
   payrollId Int
   date      DateTime
 
-  payments Payment[]
-  payroll  Payroll   @relation(fields: [payrollId], references: [id])
-
   status PayrollInstanceStatus @default(PENDING)
+
+  Payments Payment[]
+  Payroll  Payroll   @relation(fields: [payrollId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -145,8 +145,8 @@ model Payment {
   txHash String?
   paidAt DateTime?
 
-  payrollInstance PayrollInstance @relation(fields: [payrollInstanceId], references: [id])
-  user            User            @relation(fields: [userId], references: [id])
+  PayrollInstance PayrollInstance @relation(fields: [payrollInstanceId], references: [id])
+  User            User            @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

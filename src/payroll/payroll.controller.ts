@@ -1,12 +1,27 @@
-import { Controller, Get, Post, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { PayrollService } from './payroll.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('payroll')
 export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
   @Post()
-  create() {
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  create(@Request() req: Request) {
+    // @ts-ignore-next-line
+    // console.log(req.user);
     return this.payrollService.create();
   }
 
