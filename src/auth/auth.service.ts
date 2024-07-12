@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { base64ToUint8Array } from 'src/lib/utils';
-import { Organization, User } from '@prisma/client';
 import { OrganizationService } from 'src/organization/organization.service';
+import { AuthUser } from './entities/auth-user';
+import { AuthOrganization } from './entities/auth-org';
 
 class VerifyDTO {
   publicKey: string;
@@ -66,7 +67,7 @@ export class AuthService {
   async getOrCreateUser(
     walletAddress: string,
     publicKey: string,
-  ): Promise<User & { type: 'USER' | 'ORGANIZATION' }> {
+  ): Promise<AuthUser> {
     const user = await this.usersService.findByAddress(walletAddress);
 
     if (user) {
@@ -81,7 +82,7 @@ export class AuthService {
   async getOrCreateOrg(
     walletAddress: string,
     publicKey: string,
-  ): Promise<User & { type: 'ORGANIZATION' }> {
+  ): Promise<AuthOrganization> {
     const org = await this.orgService.findByAddress(walletAddress);
 
     if (org) {
@@ -94,8 +95,10 @@ export class AuthService {
   }
 
   async login(
-    entity: (User | Organization) & { type: 'USER' | 'ORGANIZATION' },
+    entity: AuthUser | AuthOrganization,
   ): Promise<{ access_token: string }> {
+    console.log('auth.service/login');
+
     const payload = { id: entity.id, type: entity.type };
 
     return {

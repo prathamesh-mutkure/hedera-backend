@@ -6,6 +6,7 @@ import {
 import { Prisma, Organization } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { UpdateOrgProfileDTO } from './dto/update-profile.dto';
+import { AuthOrganization } from 'src/auth/entities/auth-org';
 
 @Injectable()
 export class OrganizationService {
@@ -68,12 +69,12 @@ export class OrganizationService {
     return org;
   }
 
-  async findByIdForReq(id: number): Promise<
-    | (Pick<Organization, 'id' | 'email' | 'walletAddress'> & {
-        type: 'ORGANIZATION';
-      })
-    | null
-  > {
+  async findByIdForReq(
+    id: number,
+  ): Promise<Pick<
+    AuthOrganization,
+    'id' | 'email' | 'walletAddress' | 'type'
+  > | null> {
     const org = await this.prisma.organization.findUnique({
       where: {
         id,
@@ -84,6 +85,10 @@ export class OrganizationService {
         walletAddress: true,
       },
     });
+
+    if (!org) {
+      throw new NotFoundException('Organization not found');
+    }
 
     return { ...org, type: 'ORGANIZATION' };
   }

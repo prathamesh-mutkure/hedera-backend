@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { UpdateUserProfileDTO } from './dto/update-profile.dto';
+import { AuthUser } from 'src/auth/entities/auth-user';
 
 @Injectable()
 export class UserService {
@@ -65,9 +66,7 @@ export class UserService {
 
   async findByIdForReq(
     id: number,
-  ): Promise<
-    (Pick<User, 'id' | 'email' | 'walletAddress'> & { type: 'USER' }) | null
-  > {
+  ): Promise<Pick<AuthUser, 'id' | 'email' | 'walletAddress' | 'type'> | null> {
     const user = await this.prisma.user.findUnique({
       where: {
         id,
@@ -78,6 +77,10 @@ export class UserService {
         walletAddress: true,
       },
     });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     return { ...user, type: 'USER' };
   }

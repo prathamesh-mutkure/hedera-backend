@@ -8,6 +8,7 @@ import {
 import { AUTH_SECRET } from 'src/lib/constants';
 import { UserService } from 'src/user/user.service';
 import { OrganizationService } from 'src/organization/organization.service';
+import { UserType } from './entities/user-type';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -26,8 +27,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     id: number;
     iat: number;
     exp: number;
-    type: 'USER' | 'ORGANIZATION';
+    type: UserType;
   }) {
+    console.log('jtw.strategy/validate');
+
     const { type } = payload;
 
     if (type === 'USER') {
@@ -40,6 +43,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       return { ...user };
     } else if (type === 'ORGANIZATION') {
       const org = await this.orgService.findByIdForReq(+payload.id);
+
+      console.log(org);
 
       if (!org) {
         throw new UnauthorizedException("The org doesn't exist");

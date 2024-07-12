@@ -8,6 +8,7 @@ import {
 import { AuthService } from './auth.service';
 import { Request } from 'express';
 import { Organization, User } from '@prisma/client';
+import { UserType } from './entities/user-type';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -20,7 +21,21 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(req: Request): Promise<User | Organization> {
-    const { data, publicKey, signature, walletAddress, type } = req.body;
+    console.log('local.strategy/validate');
+
+    const {
+      data,
+      publicKey,
+      signature,
+      walletAddress,
+      type,
+    }: {
+      data: string;
+      publicKey: string;
+      signature: string;
+      walletAddress: string;
+      type: UserType;
+    } = req.body;
 
     const isValidSignature = await this.authService.validateSignature({
       data,
