@@ -29,7 +29,7 @@ export class PayrollController {
       name: body.name,
       organizationId: orgId,
       paymentType: body.paymentType,
-      recurringDates: body.recurringDates,
+      paymentDate: body.paymentDate,
       users: body.users,
     });
   }
@@ -96,7 +96,7 @@ export class PayrollController {
   }
 
   @Get('/:payrollId')
-  findOne(@Param('payrollId') payrollId: number) {
+  findOne(@Param('payrollId', ParseIntPipe) payrollId: number) {
     return this.payrollService.findOne(payrollId);
   }
 

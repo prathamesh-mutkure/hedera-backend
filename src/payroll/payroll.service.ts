@@ -15,7 +15,7 @@ export class PayrollService {
     name,
     organizationId,
     paymentType,
-    recurringDates,
+    paymentDate,
     users,
   }: CreatePayrollDTO & { organizationId: number }) {
     // Checks if the users exists in the organization
@@ -54,7 +54,7 @@ export class PayrollService {
         name,
         organizationId,
         paymentType,
-        recurringDates,
+        paymentDate,
         PayrollEntry: {
           createMany: {
             data: users.map((user) => ({
@@ -306,9 +306,7 @@ export class PayrollService {
     const recurringPayrolls = await this.prisma.payroll.findMany({
       where: {
         paymentType: 'RECURRING',
-        recurringDates: {
-          has: today,
-        },
+        paymentDate: today,
       },
       include: {
         Organization: {
@@ -334,7 +332,7 @@ export class PayrollService {
   }
 
   async findOne(id: number) {
-    const payroll = await this.prisma.payroll.findMany({
+    const payroll = await this.prisma.payroll.findUnique({
       where: {
         id,
       },

@@ -1,6 +1,7 @@
 import { PayrollPaymentType } from '@prisma/client';
 import {
   IsArray,
+  IsDate,
   IsEnum,
   IsInt,
   IsNumber,
@@ -21,9 +22,8 @@ export class CreatePayrollDTO {
   })
   paymentType: PayrollPaymentType;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  recurringDates: Date[];
+  @IsDate()
+  paymentDate: Date;
 
   @IsArray()
   @ValidateNested({ each: true })

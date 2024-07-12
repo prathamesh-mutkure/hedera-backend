@@ -88,9 +88,9 @@ model Payroll {
   name           String
   organizationId Int
 
-  state          PayrollState       @default(ACTIVE)
-  paymentType    PayrollPaymentType
-  recurringDates DateTime[]
+  state       PayrollState       @default(ACTIVE)
+  paymentType PayrollPaymentType
+  paymentDate DateTime           @db.Date
 
   Organization    Organization      @relation(fields: [organizationId], references: [id])
   PayrollEntry    PayrollEntry[]
