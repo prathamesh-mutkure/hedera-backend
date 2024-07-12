@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,21 +8,29 @@ import { Prisma, Organization } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { UpdateOrgProfileDTO } from './dto/update-profile.dto';
 import { AuthOrganization } from 'src/auth/entities/auth-org';
+import { CreateOrgDTO } from './dto/create-org.dto';
 
 @Injectable()
 export class OrganizationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create({
-    publicKey,
-    walletAddress,
-  }: Prisma.OrganizationCreateInput): Promise<Organization> {
+    email,
+    password,
+    name,
+    avatar,
+    website,
+  }: CreateOrgDTO): Promise<Organization> {
     const newOrg = await this.prisma.organization.create({
       data: {
-        walletAddress,
-        publicKey,
+        email,
+        password,
         OrgProfile: {
-          create: {},
+          create: {
+            name,
+            avatar,
+            website,
+          },
         },
       },
     });
@@ -39,10 +48,44 @@ export class OrganizationService {
       select: {
         id: true,
         email: true,
-        walletAddress: true,
+        stellarAccountId: true,
         orgContractId: true,
         createdAt: true,
         updatedAt: true,
+        OrgProfile: {
+          select: {
+            name: true,
+            avatar: true,
+            website: true,
+          },
+        },
+      },
+    });
+
+    return org;
+  }
+
+  async findByEmail(
+    email: string,
+  ): Promise<Omit<Organization, 'password'> | null> {
+    const org = await this.prisma.organization.findUnique({
+      where: {
+        email,
+      },
+      select: {
+        id: true,
+        email: true,
+        stellarAccountId: true,
+        orgContractId: true,
+        createdAt: true,
+        updatedAt: true,
+        OrgProfile: {
+          select: {
+            name: true,
+            avatar: true,
+            website: true,
+          },
+        },
       },
     });
 
@@ -73,7 +116,7 @@ export class OrganizationService {
     id: number,
   ): Promise<Pick<
     AuthOrganization,
-    'id' | 'email' | 'walletAddress' | 'type'
+    'id' | 'email' | 'stellarAccountId' | 'type'
   > | null> {
     const org = await this.prisma.organization.findUnique({
       where: {
@@ -82,7 +125,7 @@ export class OrganizationService {
       select: {
         id: true,
         email: true,
-        walletAddress: true,
+        stellarAccountId: true,
       },
     });
 
@@ -93,14 +136,37 @@ export class OrganizationService {
     return { ...org, type: 'ORGANIZATION' };
   }
 
-  async findByAddress(
-    walletAddress: string,
+  async findByStellarAccountId(
+    stellarAccountId: string,
   ): Promise<Organization | undefined> {
     const org = await this.prisma.organization.findUnique({
       where: {
-        walletAddress,
+        stellarAccountId,
       },
     });
+
+    delete org?.password;
+
+    return org;
+  }
+
+  async findByEmailAndPassword({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): Promise<Organization | undefined> {
+    const org = await this.prisma.organization.findUnique({
+      where: {
+        email,
+        password,
+      },
+    });
+
+    if (!org) {
+      throw new BadRequestException('Invalid username or password');
+    }
 
     delete org?.password;
 

@@ -10,11 +10,10 @@ datasource db {
 
 model User {
   id       Int     @id @default(autoincrement())
+  email    String  @unique
   password String?
-  email    String? @unique
 
-  publicKey     String @unique
-  walletAddress String @unique
+  stellarAccountId String @unique
 
   Profile       UserProfile?
   Organizations UserOrganisations[]
@@ -39,14 +38,12 @@ model UserProfile {
 }
 
 model Organization {
-  id       Int     @id @default(autoincrement())
-  password String?
-  email    String? @unique
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
 
-  publicKey     String @unique
-  walletAddress String @unique
-
-  orgContractId String? @unique
+  stellarAccountId String? @unique
+  orgContractId    String? @unique
 
   OrgProfile OrgProfile?
   Users      UserOrganisations[]
@@ -60,7 +57,7 @@ model OrgProfile {
   id    Int @id @default(autoincrement())
   orgId Int @unique
 
-  name    String?
+  name    String
   avatar  String?
   website String?
 

@@ -3,21 +3,27 @@ import { Prisma, User } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { UpdateUserProfileDTO } from './dto/update-profile.dto';
 import { AuthUser } from 'src/auth/entities/auth-user';
+import { CreateUserDTO } from './dto/create-user-dto.dto';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create({
-    publicKey,
-    walletAddress,
-  }: Prisma.UserCreateInput): Promise<User> {
+    email,
+    stellarAccountId,
+    name,
+    avatar,
+  }: CreateUserDTO): Promise<User> {
     const newUser = await this.prisma.user.create({
       data: {
-        walletAddress,
-        publicKey,
+        email,
+        stellarAccountId,
         Profile: {
-          create: {},
+          create: {
+            name,
+            avatar,
+          },
         },
       },
     });
@@ -25,9 +31,7 @@ export class UserService {
     return newUser;
   }
 
-  async findById(
-    id: number,
-  ): Promise<Omit<User, 'password' | 'publicKey'> | null> {
+  async findById(id: number): Promise<Omit<User, 'password'> | null> {
     const user = await this.prisma.user.findUnique({
       where: {
         id,
@@ -35,7 +39,7 @@ export class UserService {
       select: {
         id: true,
         email: true,
-        walletAddress: true,
+        stellarAccountId: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -66,7 +70,10 @@ export class UserService {
 
   async findByIdForReq(
     id: number,
-  ): Promise<Pick<AuthUser, 'id' | 'email' | 'walletAddress' | 'type'> | null> {
+  ): Promise<Pick<
+    AuthUser,
+    'id' | 'email' | 'stellarAccountId' | 'type'
+  > | null> {
     const user = await this.prisma.user.findUnique({
       where: {
         id,
@@ -74,7 +81,7 @@ export class UserService {
       select: {
         id: true,
         email: true,
-        walletAddress: true,
+        stellarAccountId: true,
       },
     });
 
@@ -85,10 +92,10 @@ export class UserService {
     return { ...user, type: 'USER' };
   }
 
-  async findByAddress(walletAddress: string): Promise<User | undefined> {
+  async findByStellarId(stellarAccountId: string): Promise<User | undefined> {
     const user = await this.prisma.user.findUnique({
       where: {
-        walletAddress,
+        stellarAccountId,
       },
     });
 

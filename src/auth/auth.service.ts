@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { base64ToUint8Array } from 'src/lib/utils';
 import { OrganizationService } from 'src/organization/organization.service';
 import { AuthUser } from './entities/auth-user';
 import { AuthOrganization } from './entities/auth-org';
+import { CreateUserDTO } from 'src/user/dto/create-user-dto.dto';
+import { CreateOrgDTO } from 'src/organization/dto/create-org.dto';
 
 class VerifyDTO {
-  publicKey: string;
+  stellarAccoundId: string;
   signature: string;
   data: string;
   walletAddress: string;
@@ -23,7 +25,7 @@ export class AuthService {
 
   async validateSignature({
     data,
-    publicKey,
+    stellarAccoundId,
     signature,
     walletAddress,
   }: VerifyDTO): Promise<boolean> {
@@ -31,7 +33,7 @@ export class AuthService {
       e: 'AQAB',
       ext: true,
       kty: 'RSA',
-      n: publicKey,
+      n: stellarAccoundId,
     };
 
     const hash = await crypto.subtle.digest(
@@ -64,32 +66,77 @@ export class AuthService {
     return isValidSignature && decoded === walletAddress;
   }
 
-  async getOrCreateUser(
-    walletAddress: string,
-    publicKey: string,
-  ): Promise<AuthUser> {
-    const user = await this.usersService.findByAddress(walletAddress);
+  async getUser(stellarAccountId: string): Promise<AuthUser> {
+    const user = await this.usersService.findByStellarId(stellarAccountId);
 
-    if (user) {
-      return { ...user, type: 'USER' };
+    if (!user) {
+      throw new BadRequestException('User does not exist');
     }
 
-    const org = await this.usersService.create({ walletAddress, publicKey });
-
-    return { ...org, type: 'USER' };
+    return { ...user, type: 'USER' };
   }
 
-  async getOrCreateOrg(
-    walletAddress: string,
-    publicKey: string,
-  ): Promise<AuthOrganization> {
-    const org = await this.orgService.findByAddress(walletAddress);
+  async createUser({
+    email,
+    name,
+    stellarAccountId,
+    avatar,
+  }: CreateUserDTO): Promise<AuthUser> {
+    const user = await this.usersService.findByStellarId(stellarAccountId);
 
-    if (org) {
-      return { ...org, type: 'ORGANIZATION' };
+    if (user) {
+      throw new BadRequestException('User already exists');
     }
 
-    const newOrg = await this.orgService.create({ walletAddress, publicKey });
+    const newUser = await this.usersService.create({
+      stellarAccountId,
+      email,
+      name,
+      avatar,
+    });
+
+    return { ...newUser, type: 'USER' };
+  }
+
+  async getOrg({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): Promise<AuthOrganization> {
+    const org = await this.orgService.findByEmailAndPassword({
+      email,
+      password,
+    });
+
+    if (!org) {
+      throw new BadRequestException('Org does not exist');
+    }
+
+    return { ...org, type: 'ORGANIZATION' };
+  }
+
+  async createOrg({
+    email,
+    password,
+    name,
+    avatar,
+    website,
+  }: CreateOrgDTO): Promise<AuthOrganization> {
+    const org = await this.orgService.findByEmail(email);
+
+    if (org) {
+      throw new BadRequestException('Org already exists, sign in instead');
+    }
+
+    const newOrg = await this.orgService.create({
+      email,
+      password,
+      name,
+      avatar,
+      website,
+    });
 
     return { ...newOrg, type: 'ORGANIZATION' };
   }
