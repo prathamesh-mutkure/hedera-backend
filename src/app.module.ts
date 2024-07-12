@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { PaymentModule } from './payment/payment.module';
 import { StellarModule } from './stellar/stellar.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { StellarModule } from './stellar/stellar.module';
     PayrollModule,
     PaymentModule,
     StellarModule,
+    WalletModule,
   ],
   controllers: [AppController],
   providers: [],

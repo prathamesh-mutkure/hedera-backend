@@ -47,10 +47,12 @@ model Organization {
 
   OrgProfile OrgProfile?
   Users      UserOrganisations[]
+  Payroll    Payroll?
+  Deposits   Deposit[]
+  Balance    Balance?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Payroll   Payroll?
 }
 
 model OrgProfile {
@@ -147,6 +149,34 @@ model Payment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Balance {
+  id Int @id @default(autoincrement())
+
+  orgId  Int   @unique
+  amount Float @default(0)
+
+  Organization Organization @relation(fields: [orgId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Deposit {
+  id Int @id @default(autoincrement())
+
+  orgId  Int
+  amount Float
+  token  String
+  txHash String @unique
+
+  Organization Organization @relation(fields: [orgId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, txHash])
 }
 
 enum PayrollState {

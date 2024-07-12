@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Organization } from '@prisma/client';
+import { Organization } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { UpdateOrgProfileDTO } from './dto/update-profile.dto';
 import { AuthOrganization } from 'src/auth/entities/auth-org';
@@ -32,6 +32,9 @@ export class OrganizationService {
             website,
           },
         },
+        Balance: {
+          create: {},
+        },
       },
     });
 
@@ -57,6 +60,11 @@ export class OrganizationService {
             name: true,
             avatar: true,
             website: true,
+          },
+        },
+        Balance: {
+          select: {
+            id: true,
           },
         },
       },
@@ -86,6 +94,11 @@ export class OrganizationService {
             website: true,
           },
         },
+        Balance: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -104,6 +117,7 @@ export class OrganizationService {
           },
         },
         OrgProfile: true,
+        Balance: true,
       },
     });
 
