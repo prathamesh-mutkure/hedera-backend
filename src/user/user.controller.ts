@@ -36,4 +36,9 @@ export class UserController {
       data: body,
     });
   }
+
+  @Get('email/:email')
+  async findByEmail(@Param('email') email: string) {
+    return this.userService.findByEmail(email);
+  }
 }

@@ -102,6 +102,30 @@ export class UserService {
     return user;
   }
 
+  async findByEmail(email: string): Promise<User | undefined> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+      include: {
+        Profile: {
+          select: {
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    delete user?.password;
+
+    return user;
+  }
+
   async updateProfile({
     userId,
     data,
