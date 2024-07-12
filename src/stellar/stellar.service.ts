@@ -7,7 +7,7 @@ import { AccountResponse } from '@stellar/stellar-sdk/lib/horizon';
 export class StellarService {
   private readonly server: StellarSdk.Horizon.Server;
   private readonly keyPair: Keypair;
-  private readonly account: AccountResponse;
+  private account: AccountResponse;
 
   constructor() {
     const server = new StellarSdk.Horizon.Server(
@@ -24,6 +24,7 @@ export class StellarService {
 
   async loadAccount() {
     const account = await this.server.loadAccount(this.keyPair.publicKey());
+    this.account = account;
     return account;
   }
 
@@ -45,6 +46,34 @@ export class StellarService {
       console.error('Error funding account', error);
       return false;
     }
+  }
+
+  async transferFunds({ destinationAccount }: { destinationAccount: string }) {
+    const account = await this.loadAccount();
+
+    // Start building the transaction.
+    const transaction = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .addOperation(
+        StellarSdk.Operation.payment({
+          destination: destinationAccount,
+          asset: StellarSdk.Asset.native(),
+          amount: '0.5',
+        }),
+      )
+      .addMemo(StellarSdk.Memo.text('Test Transaction'))
+      .setTimeout(180)
+      .build();
+
+    // Sign the transaction to prove you are actually the person sending it.
+    transaction.sign(this.keyPair);
+
+    // And finally, send it off to Stellar!
+    const result = await this.server.submitTransaction(transaction);
+
+    return result;
   }
 
   async test() {}
