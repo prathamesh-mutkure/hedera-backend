@@ -1,13 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Keypair } from '@stellar/stellar-sdk';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { AccountResponse } from '@stellar/stellar-sdk/lib/horizon';
+import axios from 'axios';
 
 @Injectable()
 export class StellarService {
   private readonly server: StellarSdk.Horizon.Server;
   private readonly keyPair: Keypair;
   private account: AccountResponse;
+  public readonly stellarAccountId: string;
 
   constructor() {
     const server = new StellarSdk.Horizon.Server(
@@ -20,6 +22,7 @@ export class StellarService {
 
     this.server = server;
     this.keyPair = keyPair;
+    this.stellarAccountId = keyPair.publicKey();
   }
 
   async loadAccount() {
@@ -74,6 +77,39 @@ export class StellarService {
     const result = await this.server.submitTransaction(transaction);
 
     return result;
+  }
+
+  static async getTxnOperations({ txHash }: { txHash: string }) {
+    const txnDetails = await axios.get(
+      `https://horizon-testnet.stellar.org/transactions/${txHash}/oprations`,
+    );
+
+    const opData = txnDetails.data as {
+      _embedded: {
+        records: {
+          id: string;
+          transaction_hash: string;
+          source_account: string;
+          type: string;
+          created_at: Date;
+          transaction_successful: boolean;
+          from: string;
+          to: string;
+          amount: string;
+          asset_type: string;
+        }[];
+      };
+    };
+
+    if (!opData || opData._embedded.records.length === 0) {
+      throw new BadRequestException(
+        'Transaction does not contain any operations',
+      );
+    }
+
+    const op = opData._embedded.records.find((item) => item.type === 'payment');
+
+    return op;
   }
 
   async test() {}
