@@ -47,7 +47,7 @@ model Organization {
 
   OrgProfile OrgProfile?
   Users      UserOrganisations[]
-  Payroll    Payroll?
+  Payroll    Payroll[]
   Deposits   Deposit[]
   Balance    Balance?
 
@@ -86,7 +86,7 @@ model UserOrganisations {
 model Payroll {
   id             Int    @id @default(autoincrement())
   name           String
-  organizationId Int    @unique
+  organizationId Int
 
   state          PayrollState       @default(ACTIVE)
   paymentType    PayrollPaymentType

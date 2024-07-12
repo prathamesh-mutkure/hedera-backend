@@ -4,7 +4,6 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PayrollPaymentType } from '@prisma/client';
 import { PrismaService } from 'src/prisma.service';
 import { CreatePayrollDTO } from './dto/create-payroll.dto';
 
