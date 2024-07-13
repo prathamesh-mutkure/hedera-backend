@@ -113,5 +113,7 @@ export class PayrollController {
     // return this.payrollService.triggerPaymentsForInstance({
     //   payrollInstanceId: 1,
     // });
+
+    return 'Test';
   }
 }
