@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { CreatePayrollDTO } from './dto/create-payroll.dto';
+import { StellarService } from 'src/stellar/stellar.service';
 
 @Injectable()
 export class PayrollService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stellarService: StellarService,
+  ) {}
 
   async create({
     name,
@@ -345,7 +349,7 @@ export class PayrollService {
     return payroll;
   }
 
-  findByOrg({ orgId }: { orgId: number }) {
+  async findByOrg({ orgId }: { orgId: number }) {
     return this.prisma.payroll.findMany({
       where: {
         organizationId: orgId,
