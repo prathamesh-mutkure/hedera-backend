@@ -88,9 +88,10 @@ model Payroll {
   name           String
   organizationId Int
 
-  state       PayrollState       @default(ACTIVE)
-  paymentType PayrollPaymentType
-  paymentDate DateTime           @db.Date
+  state                 PayrollState       @default(ACTIVE)
+  paymentType           PayrollPaymentType
+  paymentDate           DateTime           @db.Date
+  paymentDateOfTheMonth Int
 
   Organization    Organization      @relation(fields: [organizationId], references: [id])
   PayrollEntry    PayrollEntry[]

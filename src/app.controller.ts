@@ -17,10 +17,14 @@ import {
   UserSignInDTO,
   UserSignUpDTO,
 } from './auth/dto/auth.dto';
+import { PrismaService } from './prisma.service';
 
 @Controller()
 export class AppController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private prisma: PrismaService,
+  ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('auth/user/signin')
@@ -54,7 +58,7 @@ export class AppController {
   }
 
   @Get('hello')
-  getHello(): string {
-    return 'Hello World';
+  async getHello() {
+    return 'Hello World!';
   }
 }

@@ -52,6 +52,9 @@ export class PayrollService {
       }
     });
 
+    const date = new Date(paymentDate);
+    const paymentDateOfTheMonth = date.getDate();
+
     // Create the payroll
     const payroll = this.prisma.payroll.create({
       data: {
@@ -59,6 +62,7 @@ export class PayrollService {
         organizationId,
         paymentType,
         paymentDate,
+        paymentDateOfTheMonth,
         PayrollEntry: {
           createMany: {
             data: users.map((user) => ({
@@ -297,15 +301,22 @@ export class PayrollService {
     }
   }
 
-  // TODO: Fix the date logic
   async checkAndCreateRecurringPayrollInstances() {
-    const today = new Date();
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-    // TODO: Implement ONE_TIME payroll logic
-    const recurringPayrolls = await this.prisma.payroll.findMany({
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayDateOfTheMonth = new Date().getDate();
+
+    const oneTimePayrolls = await this.prisma.payroll.findMany({
       where: {
-        paymentType: 'RECURRING',
-        paymentDate: today,
+        paymentType: 'ONE_TIME',
+        paymentDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
       },
       include: {
         Organization: {
@@ -316,7 +327,24 @@ export class PayrollService {
       },
     });
 
-    for (const payroll of recurringPayrolls) {
+    const recurringPayrolls = await this.prisma.payroll.findMany({
+      where: {
+        paymentType: 'RECURRING',
+        state: 'ACTIVE',
+        paymentDateOfTheMonth: todayDateOfTheMonth,
+      },
+      include: {
+        Organization: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    const allPayrolls = [...oneTimePayrolls, ...recurringPayrolls];
+
+    for (const payroll of allPayrolls) {
       const instance = await this.createPayrollInstance({
         payrollId: payroll.id,
         orgId: payroll.organizationId,

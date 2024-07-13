@@ -9,6 +9,7 @@ import { PayrollModule } from './payroll/payroll.module';
 import { PaymentModule } from './payment/payment.module';
 import { StellarModule } from './stellar/stellar.module';
 import { WalletModule } from './wallet/wallet.module';
+import { PrismaService } from './prisma.service';
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import { WalletModule } from './wallet/wallet.module';
     WalletModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [PrismaService],
 })
 export class AppModule {}
