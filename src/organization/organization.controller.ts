@@ -47,7 +47,7 @@ export class OrganizationController {
     });
   }
 
-  @Patch('/user')
+  @Patch('user')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   async addUserToOrg(@Body() { userEmail }: AddUserToOrgDTO, @Request() req) {

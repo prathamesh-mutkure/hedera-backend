@@ -252,6 +252,19 @@ export class OrganizationService {
       throw new NotFoundException('User not found');
     }
 
+    const orgUserExists = await this.prisma.userOrganisations.findUnique({
+      where: {
+        orgId,
+        userId: user.id,
+      },
+    });
+
+    if (orgUserExists) {
+      throw new BadRequestException(
+        `User with email ${userEmail} is already part of the organization`,
+      );
+    }
+
     const orgUser = await this.prisma.userOrganisations.create({
       data: {
         orgId,
