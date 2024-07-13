@@ -18,6 +18,15 @@ import { UpdateOrgProfileDTO } from './dto/update-profile.dto';
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
+  @Get('/users')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  async getOrgUsers(@Request() req: Request) {
+    // @ts-ignore
+    const orgId = req.user.id;
+    return this.organizationService.getOrgUsers(orgId);
+  }
+
   @Get(':id')
   async getById(@Param('id', ParseIntPipe) id: number) {
     return this.organizationService.findById(id);
@@ -26,15 +35,6 @@ export class OrganizationController {
   @Get(':id/detailed')
   async getByIdDetailed(@Param('id', ParseIntPipe) id: number) {
     return this.organizationService.findByIdDetailed(id);
-  }
-
-  @Get('users')
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard)
-  async getOrgUsers() {
-    // @ts-ignore
-    const orgId = req.user.id;
-    return this.organizationService.getOrgUsers(orgId);
   }
 
   @Patch('/profile')
