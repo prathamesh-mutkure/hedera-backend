@@ -71,35 +71,39 @@ export class StellarService {
     accounts: { destinationAccount: string; amount: number }[];
     memoText?: string;
   }) {
-    const account = await this.loadAccount();
+    try {
+      const account = await this.loadAccount();
 
-    // Start building the transaction.
-    const transaction = new StellarSdk.TransactionBuilder(account, {
-      fee: StellarSdk.BASE_FEE,
-      networkPassphrase: StellarSdk.Networks.TESTNET,
-    });
+      // Start building the transaction.
+      const transaction = new StellarSdk.TransactionBuilder(account, {
+        fee: StellarSdk.BASE_FEE,
+        networkPassphrase: StellarSdk.Networks.TESTNET,
+      });
 
-    accounts.forEach((item) => {
-      transaction.addOperation(
-        StellarSdk.Operation.payment({
-          destination: item.destinationAccount,
-          asset: StellarSdk.Asset.native(),
-          amount: item.amount.toString(),
-        }),
-      );
-    });
+      accounts.forEach((item) => {
+        transaction.addOperation(
+          StellarSdk.Operation.payment({
+            destination: item.destinationAccount,
+            asset: StellarSdk.Asset.native(),
+            amount: item.amount.toString(),
+          }),
+        );
+      });
 
-    if (memoText) {
-      transaction.addMemo(StellarSdk.Memo.text(memoText));
+      if (memoText) {
+        transaction.addMemo(StellarSdk.Memo.text(memoText));
+      }
+
+      const builtTxn = transaction.setTimeout(180).build();
+
+      builtTxn.sign(this.keyPair);
+
+      const result = await this.server.submitTransaction(builtTxn);
+
+      return result;
+    } catch (error) {
+      console.log(error);
     }
-
-    const builtTxn = transaction.setTimeout(180).build();
-
-    builtTxn.sign(this.keyPair);
-
-    const result = await this.server.submitTransaction(builtTxn);
-
-    return result;
   }
 
   static async fundAccount(keyPair: Keypair) {

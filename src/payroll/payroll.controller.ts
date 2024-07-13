@@ -100,8 +100,18 @@ export class PayrollController {
     return this.payrollService.findOne(payrollId);
   }
 
-  @Get('/org/:orgId')
-  findByOrg(@Param('orgId', ParseIntPipe) orgId: number) {
+  @Get('/org/list')
+  findByOrg() {
+    // @ts-ignore-next-line
+    const orgId: number = req.user.id;
     return this.payrollService.findByOrg({ orgId });
+  }
+
+  @Get('test/test')
+  test() {
+    // return this.payrollService.checkAndCreateRecurringPayrollInstances();
+    // return this.payrollService.triggerPaymentsForInstance({
+    //   payrollInstanceId: 1,
+    // });
   }
 }

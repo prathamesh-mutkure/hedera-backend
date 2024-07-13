@@ -7,6 +7,7 @@ import {
 import { PrismaService } from 'src/prisma.service';
 import { CreatePayrollDTO } from './dto/create-payroll.dto';
 import { StellarService } from 'src/stellar/stellar.service';
+import { Payroll } from '@prisma/client';
 
 @Injectable()
 export class PayrollService {
@@ -258,6 +259,8 @@ export class PayrollService {
         },
       });
 
+      console.log('hi');
+
       // Make payments on-chain
       const paymentResult = await this.stellarService.transferMultipleFunds({
         accounts: pendingPayments.map((payment) => ({
@@ -266,6 +269,8 @@ export class PayrollService {
         })),
         memoText: `${payrollInstanceId}`,
       });
+
+      console.log('hello');
 
       const updatedPayments = await this.prisma.payment.updateMany({
         where: {
@@ -279,12 +284,16 @@ export class PayrollService {
         },
       });
 
+      console.log('meow');
+
       await this.prisma.payrollInstance.update({
         where: { id: payrollInstanceId },
         data: {
           status: paymentResult.successful ? 'PAID' : 'FAILED',
         },
       });
+
+      console.log('bhow');
 
       return true;
     } catch (error) {
@@ -299,6 +308,26 @@ export class PayrollService {
 
       return false;
     }
+  }
+
+  async processPayroll(payroll: Payroll) {
+    const instance = await this.createPayrollInstance({
+      payrollId: payroll.id,
+      orgId: payroll.organizationId,
+    });
+
+    console.log('Instance -', instance);
+
+    this.generatePaymentsForInstance({
+      payrollInstanceId: instance.id,
+      orgId: payroll.organizationId,
+    });
+
+    const res = await this.triggerPaymentsForInstance({
+      payrollInstanceId: instance.id,
+    });
+
+    return res;
   }
 
   async checkAndCreateRecurringPayrollInstances() {
@@ -344,19 +373,33 @@ export class PayrollService {
 
     const allPayrolls = [...oneTimePayrolls, ...recurringPayrolls];
 
-    for (const payroll of allPayrolls) {
-      const instance = await this.createPayrollInstance({
-        payrollId: payroll.id,
-        orgId: payroll.organizationId,
-      });
+    const allExecutionPromises = allPayrolls.map((payroll) =>
+      this.processPayroll(payroll),
+    );
 
-      await this.generatePaymentsForInstance({
-        payrollInstanceId: instance.id,
-        orgId: payroll.organizationId,
-      });
+    const results = await Promise.all(allExecutionPromises);
 
-      await this.triggerPaymentsForInstance({ payrollInstanceId: instance.id });
-    }
+    console.log(results);
+
+    // for (const payroll of allPayrolls) {
+    //   const instance = await this.createPayrollInstance({
+    //     payrollId: payroll.id,
+    //     orgId: payroll.organizationId,
+    //   });
+
+    //   console.log('Instance -', instance);
+
+    //   this.generatePaymentsForInstance({
+    //     payrollInstanceId: instance.id,
+    //     orgId: payroll.organizationId,
+    //   });
+
+    //   const res = await this.triggerPaymentsForInstance({
+    //     payrollInstanceId: instance.id,
+    //   });
+
+    //   console.log('Triggered -', res);
+    // }
   }
 
   async findOne(id: number) {
