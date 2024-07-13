@@ -27,7 +27,7 @@ export class UserController {
     return this.userService.findByIdDetailed(id);
   }
 
-  @Get('user')
+  @Get('orgs')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   async getUserOrgs() {
