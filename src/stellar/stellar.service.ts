@@ -31,7 +31,78 @@ export class StellarService {
     return account;
   }
 
-  private static async fundAccount(keyPair: Keypair) {
+  async transferFunds({
+    destinationAccount,
+    amount,
+    memoText,
+  }: {
+    destinationAccount: string;
+    amount: number;
+    memoText?: string;
+  }) {
+    const account = await this.loadAccount();
+
+    const transaction = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+      .addOperation(
+        StellarSdk.Operation.payment({
+          destination: destinationAccount,
+          asset: StellarSdk.Asset.native(),
+          amount: amount.toString(),
+        }),
+      )
+      .addMemo(StellarSdk.Memo.text(memoText ?? ''))
+      .setTimeout(180)
+      .build();
+
+    transaction.sign(this.keyPair);
+
+    const result = await this.server.submitTransaction(transaction);
+
+    return result;
+  }
+
+  async transferMultipleFunds({
+    accounts,
+    memoText,
+  }: {
+    accounts: { destinationAccount: string; amount: number }[];
+    memoText?: string;
+  }) {
+    const account = await this.loadAccount();
+
+    // Start building the transaction.
+    const transaction = new StellarSdk.TransactionBuilder(account, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: StellarSdk.Networks.TESTNET,
+    });
+
+    accounts.forEach((item) => {
+      transaction.addOperation(
+        StellarSdk.Operation.payment({
+          destination: item.destinationAccount,
+          asset: StellarSdk.Asset.native(),
+          amount: item.amount.toString(),
+        }),
+      );
+    });
+
+    if (memoText) {
+      transaction.addMemo(StellarSdk.Memo.text(memoText));
+    }
+
+    const builtTxn = transaction.setTimeout(180).build();
+
+    builtTxn.sign(this.keyPair);
+
+    const result = await this.server.submitTransaction(builtTxn);
+
+    return result;
+  }
+
+  static async fundAccount(keyPair: Keypair) {
     try {
       const response = await fetch(
         `https://friendbot.stellar.org?addr=${encodeURIComponent(
@@ -49,34 +120,6 @@ export class StellarService {
       console.error('Error funding account', error);
       return false;
     }
-  }
-
-  async transferFunds({ destinationAccount }: { destinationAccount: string }) {
-    const account = await this.loadAccount();
-
-    // Start building the transaction.
-    const transaction = new StellarSdk.TransactionBuilder(account, {
-      fee: StellarSdk.BASE_FEE,
-      networkPassphrase: StellarSdk.Networks.TESTNET,
-    })
-      .addOperation(
-        StellarSdk.Operation.payment({
-          destination: destinationAccount,
-          asset: StellarSdk.Asset.native(),
-          amount: '0.5',
-        }),
-      )
-      .addMemo(StellarSdk.Memo.text('Test Transaction'))
-      .setTimeout(180)
-      .build();
-
-    // Sign the transaction to prove you are actually the person sending it.
-    transaction.sign(this.keyPair);
-
-    // And finally, send it off to Stellar!
-    const result = await this.server.submitTransaction(transaction);
-
-    return result;
   }
 
   static async getTxnOperations({ txHash }: { txHash: string }) {

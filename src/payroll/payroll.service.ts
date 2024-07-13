@@ -236,7 +236,7 @@ export class PayrollService {
     payrollInstanceId: number;
   }) {
     // TODO: Admin or Org Check
-    // Get all pening payments for the payroll instance
+    // Get all pending payments for the payroll instance
     const payments = await this.prisma.payment.findMany({
       where: {
         payrollInstanceId,
