@@ -28,6 +28,15 @@ export class OrganizationController {
     return this.organizationService.findByIdDetailed(id);
   }
 
+  @Get('users')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  async getOrgUsers() {
+    // @ts-ignore
+    const orgId = req.user.id;
+    return this.organizationService.getOrgUsers(orgId);
+  }
+
   @Patch('/profile')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)

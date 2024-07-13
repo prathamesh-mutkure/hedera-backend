@@ -187,6 +187,31 @@ export class OrganizationService {
     return org;
   }
 
+  async getOrgUsers({ orgId }: { orgId: number }) {
+    const userOrgs = await this.prisma.userOrganisations.findMany({
+      where: {
+        orgId,
+      },
+      select: {
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            Profile: {
+              select: {
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return userOrgs;
+  }
+
   async updateProfile({
     orgId,
     data,
