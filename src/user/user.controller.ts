@@ -18,7 +18,7 @@ import { Request } from 'express';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get('orgs')
+  @Get('orgs/list')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   async getUserOrgs(@Req() req: Request) {
