@@ -240,69 +240,64 @@ export class PayrollService {
     payrollInstanceId: number;
   }) {
     // TODO: Admin or Org Check
-    // Get all pending payments for the payroll instance
-    const payments = await this.prisma.payment.findMany({
-      where: {
-        payrollInstanceId,
-        status: 'PENDING',
-      },
-      include: {
-        User: true,
-      },
-    });
+    // TODO: Notifications
 
-    for (const payment of payments) {
-      try {
-        // Set payment to processing
-        await this.prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: 'PROCESSING' },
-        });
+    try {
+      // Get all pending payments for the payroll instance
+      const pendingPayments = await this.prisma.payment.findMany({
+        where: {
+          payrollInstanceId,
+          status: 'PENDING',
+        },
+        include: {
+          User: true,
+        },
+      });
 
-        // TODO: Implement payment logic here
-        // Use Stellar JS SDK
+      // Make payments on-chain
+      const paymentResult = await this.stellarService.transferMultipleFunds({
+        accounts: pendingPayments.map((payment) => ({
+          amount: payment.amount,
+          destinationAccount: payment.User.stellarAccountId,
+        })),
+        memoText: `${payrollInstanceId}`,
+      });
 
-        // TODO: Tx hash should be the actual transaction hash
-        await this.prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: 'PAID',
-            paidAt: new Date(),
-            txHash: 'txHash',
-          },
-        });
+      const updatedPayments = await this.prisma.payment.updateMany({
+        where: {
+          payrollInstanceId,
+          status: 'PENDING',
+        },
+        data: {
+          status: paymentResult.successful ? 'PAID' : 'FAILED',
+          paidAt: new Date(),
+          txHash: paymentResult.hash,
+        },
+      });
 
-        console.log(`Paid ${payment.amount} to ${payment.User.email}`);
-      } catch (error) {
-        // If payment fails, mark it as failed
-        await this.prisma.payment.update({
-          where: { id: payment.id },
-          data: { status: 'FAILED' },
-        });
-        console.error(
-          `Failed to pay ${payment.amount} to ${payment.User.email}: ${error.message}`,
-        );
-      }
+      await this.prisma.payrollInstance.update({
+        where: { id: payrollInstanceId },
+        data: {
+          status: paymentResult.successful ? 'PAID' : 'FAILED',
+        },
+      });
+
+      return true;
+    } catch (error) {
+      console.log('Failed to make payments');
+
+      await this.prisma.payrollInstance.update({
+        where: { id: payrollInstanceId },
+        data: {
+          status: 'PROCESSING',
+        },
+      });
+
+      return false;
     }
-
-    // Update the payroll instance status
-    const allPayments = await this.prisma.payment.findMany({
-      where: { payrollInstanceId },
-    });
-
-    const allPaid = allPayments.every((payment) => payment.status === 'PAID');
-    const allFailed = allPayments.every(
-      (payment) => payment.status === 'FAILED',
-    );
-
-    await this.prisma.payrollInstance.update({
-      where: { id: payrollInstanceId },
-      data: {
-        status: allPaid ? 'PAID' : allFailed ? 'FAILED' : 'PARTIALLY_PAID',
-      },
-    });
   }
 
+  // TODO: Fix the date logic
   async checkAndCreateRecurringPayrollInstances() {
     const today = new Date();
 
@@ -331,6 +326,7 @@ export class PayrollService {
         payrollInstanceId: instance.id,
         orgId: payroll.organizationId,
       });
+
       await this.triggerPaymentsForInstance({ payrollInstanceId: instance.id });
     }
   }
