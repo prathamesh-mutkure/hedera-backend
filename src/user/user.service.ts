@@ -68,6 +68,31 @@ export class UserService {
     return org;
   }
 
+  async getUserOrgs({ userId }: { userId: number }) {
+    const userOrgs = await this.prisma.userOrganisations.findMany({
+      where: {
+        userId,
+      },
+      select: {
+        organisation: {
+          select: {
+            id: true,
+            email: true,
+            OrgProfile: {
+              select: {
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        createdAt: true,
+      },
+    });
+
+    return userOrgs;
+  }
+
   async findByIdForReq(
     id: number,
   ): Promise<Pick<

@@ -27,6 +27,17 @@ export class UserController {
     return this.userService.findByIdDetailed(id);
   }
 
+  @Get('user')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  async getUserOrgs() {
+    // @ts-ignore
+    const userId = req.user.id;
+    return this.userService.getUserOrgs({
+      userId,
+    });
+  }
+
   @Patch('/profile')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
