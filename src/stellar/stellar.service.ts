@@ -128,7 +128,7 @@ export class StellarService {
 
   static async getTxnOperations({ txHash }: { txHash: string }) {
     const txnDetails = await axios.get(
-      `https://horizon-testnet.stellar.org/transactions/${txHash}/oprations`,
+      `https://horizon-testnet.stellar.org/transactions/${txHash}/operations`,
     );
 
     const opData = txnDetails.data as {
