@@ -117,11 +117,11 @@ export class PayrollController {
 
   @Get('test/test')
   test() {
-    // return this.payrollService.checkAndCreateRecurringPayrollInstances();
+    return this.payrollService.checkAndCreateRecurringPayrollInstances();
     // return this.payrollService.triggerPaymentsForInstance({
     //   payrollInstanceId: 1,
     // });
 
-    return 'Test';
+    // return 'Test';
   }
 }
