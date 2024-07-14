@@ -108,6 +108,13 @@ export class PayrollController {
     return this.payrollService.findByOrg({ orgId });
   }
 
+  @Get('instance/org/list')
+  findPayrollInstancesByOrg(@Req() req: Request) {
+    // @ts-ignore-next-line
+    const orgId: number = req.user.id;
+    return this.payrollService.findPayrollInstancesByOrg({ orgId });
+  }
+
   @Get('test/test')
   test() {
     // return this.payrollService.checkAndCreateRecurringPayrollInstances();

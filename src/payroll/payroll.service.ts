@@ -397,4 +397,24 @@ export class PayrollService {
       },
     });
   }
+
+  async findPayrollInstancesByOrg({ orgId }: { orgId: number }) {
+    return this.prisma.payroll.findMany({
+      where: {
+        organizationId: orgId,
+      },
+      select: {
+        id: true,
+        name: true,
+        state: true,
+        PayrollInstance: {
+          select: {
+            id: true,
+            date: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
 }
