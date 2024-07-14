@@ -93,6 +93,8 @@ model Payroll {
   paymentDate           DateTime           @db.Date
   paymentDateOfTheMonth Int
 
+  totalAmount Float
+
   Organization    Organization      @relation(fields: [organizationId], references: [id])
   PayrollEntry    PayrollEntry[]
   PayrollInstance PayrollInstance[]
@@ -125,7 +127,8 @@ model PayrollInstance {
   payrollId Int
   date      DateTime
 
-  status PayrollInstanceStatus @default(PENDING)
+  status           PayrollInstanceStatus @default(PENDING)
+  amountDisabursed Float                 @default(0)
 
   Payments Payment[]
   Payroll  Payroll   @relation(fields: [payrollId], references: [id])

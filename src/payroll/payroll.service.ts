@@ -64,6 +64,7 @@ export class PayrollService {
         paymentType,
         paymentDate,
         paymentDateOfTheMonth,
+        totalAmount: users.reduce((acc, user) => acc + user.amount, 0),
         PayrollEntry: {
           createMany: {
             data: users.map((user) => ({
@@ -134,18 +135,30 @@ export class PayrollService {
       );
     }
 
-    const payrollEntry = await this.prisma.payrollEntry.create({
-      data: {
-        Payroll: {
-          connect: { id: payrollId },
+    const [payrollEntry, updatedPayroll] = await this.prisma.$transaction([
+      this.prisma.payrollEntry.create({
+        data: {
+          Payroll: {
+            connect: { id: payrollId },
+          },
+          User: {
+            connect: { id: user.id },
+          },
+          amount: user.amount,
+          token: user.token,
         },
-        User: {
-          connect: { id: user.id },
+      }),
+      this.prisma.payroll.update({
+        where: {
+          id: payrollId,
         },
-        amount: user.amount,
-        token: user.token,
-      },
-    });
+        data: {
+          totalAmount: {
+            increment: user.amount,
+          },
+        },
+      }),
+    ]);
 
     return payrollEntry;
   }
@@ -234,9 +247,22 @@ export class PayrollService {
       amount: entry.amount,
     }));
 
-    const payments = await this.prisma.payment.createMany({
-      data: paymentsData,
-    });
+    const [payments, updatedInstance] = await this.prisma.$transaction([
+      this.prisma.payment.createMany({
+        data: paymentsData,
+      }),
+      this.prisma.payrollInstance.update({
+        where: {
+          id: payrollInstanceId,
+        },
+        data: {
+          amountDisabursed: paymentsData.reduce(
+            (acc, payment) => acc + payment.amount,
+            0,
+          ),
+        },
+      }),
+    ]);
 
     return payments;
   }
@@ -406,12 +432,12 @@ export class PayrollService {
       select: {
         id: true,
         name: true,
-        state: true,
         PayrollInstance: {
           select: {
             id: true,
             date: true,
             status: true,
+            amountDisabursed: true,
           },
         },
       },
