@@ -1,12 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  Controller,
-  Get,
-  UseGuards,
-  Request,
-  Post,
-  Body,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Post, Body } from '@nestjs/common';
 import { LocalAuthGuard } from './auth/local-auth.guard';
 import { AuthService } from './auth/auth.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -18,6 +11,7 @@ import {
   UserSignUpDTO,
 } from './auth/dto/auth.dto';
 import { PrismaService } from './prisma.service';
+import { Request } from 'express';
 
 @Controller()
 export class AppController {
@@ -28,32 +22,37 @@ export class AppController {
 
   @UseGuards(LocalAuthGuard)
   @Post('auth/user/signin')
-  async userSignIn(@Request() req, @Body() _: UserSignInDTO) {
+  async userSignIn(@Req() req: Request, @Body() _: UserSignInDTO) {
+    // @ts-ignore
     return this.authService.login(req.user);
   }
 
   @UseGuards(LocalAuthGuard)
   @Post('auth/user/signup')
-  async userSignUp(@Request() req, @Body() _: UserSignUpDTO) {
+  async userSignUp(@Req() req: Request, @Body() _: UserSignUpDTO) {
+    // @ts-ignore
     return this.authService.login(req.user);
   }
 
   @UseGuards(LocalAuthGuard)
   @Post('auth/org/signin')
-  async orgSignIn(@Request() req, @Body() _: OrgSignInDTO) {
+  async orgSignIn(@Req() req: Request, @Body() _: OrgSignInDTO) {
+    // @ts-ignore
     return this.authService.login(req.user);
   }
 
   @UseGuards(LocalAuthGuard)
   @Post('auth/org/signup')
-  async orgSignUp(@Request() req, @Body() _: OrgSignUpDTO) {
+  async orgSignUp(@Req() req: Request, @Body() _: OrgSignUpDTO) {
+    // @ts-ignore
     return this.authService.login(req.user);
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   @Get('profile')
-  getProfile(@Request() req) {
+  getProfile(@Req() req: Request) {
+    // @ts-ignore
     return req.user;
   }
 

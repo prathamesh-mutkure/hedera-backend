@@ -4,7 +4,7 @@ import {
   Post,
   Param,
   UseGuards,
-  Request,
+  Req,
   Body,
   ParseIntPipe,
 } from '@nestjs/common';
@@ -13,6 +13,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreatePayrollDTO } from './dto/create-payroll.dto';
 import { AddUserToPayrollDTO } from './dto/add-user-to-payroll.dto';
+import { Request } from 'express';
 
 @Controller('payroll')
 @ApiBearerAuth('access-token')
@@ -21,7 +22,7 @@ export class PayrollController {
   constructor(private readonly payrollService: PayrollService) {}
 
   @Post()
-  create(@Request() req: Request, @Body() body: CreatePayrollDTO) {
+  create(@Req() req: Request, @Body() body: CreatePayrollDTO) {
     // @ts-ignore-next-line
     const orgId: number = req.user.id;
 
@@ -36,7 +37,7 @@ export class PayrollController {
 
   @Post(':payrollId/add/user')
   addUserToPayroll(
-    @Request() req: Request,
+    @Req() req: Request,
     @Param('payrollId', ParseIntPipe) payrollId: number,
     @Body() body: AddUserToPayrollDTO,
   ) {
@@ -56,7 +57,7 @@ export class PayrollController {
 
   @Get(':payrollId/instance/new')
   createPayrollInstance(
-    @Request() req: Request,
+    @Req() req: Request,
     @Param('payrollId', ParseIntPipe) payrollId: number,
   ) {
     // @ts-ignore-next-line
@@ -70,7 +71,7 @@ export class PayrollController {
 
   @Get('/instance/:payrollInstanceId/payments/generate')
   generatePaymentsForInstance(
-    @Request() req: Request,
+    @Req() req: Request,
     @Param('payrollInstanceId', ParseIntPipe) payrollInstanceId: number,
   ) {
     // @ts-ignore-next-line
@@ -84,7 +85,7 @@ export class PayrollController {
 
   @Get('/instance/:payrollInstanceId/payments/trigger')
   triggerPaymentsForInstance(
-    @Request() req: Request,
+    @Req() req: Request,
     @Param('payrollInstanceId', ParseIntPipe) payrollInstanceId: number,
   ) {
     // @ts-ignore-next-line
@@ -101,7 +102,7 @@ export class PayrollController {
   }
 
   @Get('/org/list')
-  findByOrg() {
+  findByOrg(@Req() req: Request) {
     // @ts-ignore-next-line
     const orgId: number = req.user.id;
     return this.payrollService.findByOrg({ orgId });

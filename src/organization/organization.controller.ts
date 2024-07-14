@@ -5,7 +5,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
-  Request,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
@@ -13,6 +13,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { AddUserToOrgDTO } from './dto/add-user-to-org.dto';
 import { UpdateOrgProfileDTO } from './dto/update-profile.dto';
+import { Request } from 'express';
 
 @Controller('organization')
 export class OrganizationController {
@@ -21,8 +22,8 @@ export class OrganizationController {
   @Get('/users')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
-  async getOrgUsers(@Request() req: Request) {
-    // @ts-ignore
+  async getOrgUsers(@Req() req: Request) {
+    // @ts-ignore-next-line
     const orgId = req.user.id;
     return this.organizationService.getOrgUsers(orgId);
   }
@@ -40,8 +41,12 @@ export class OrganizationController {
   @Patch('/profile')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
-  async updateOrgProfile(@Body() body: UpdateOrgProfileDTO, @Request() req) {
+  async updateOrgProfile(
+    @Body() body: UpdateOrgProfileDTO,
+    @Req() req: Request,
+  ) {
     return this.organizationService.updateProfile({
+      // @ts-ignore-next-line
       orgId: req.user.id,
       data: body,
     });
@@ -50,8 +55,12 @@ export class OrganizationController {
   @Patch('user')
   @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
-  async addUserToOrg(@Body() { userEmail }: AddUserToOrgDTO, @Request() req) {
+  async addUserToOrg(
+    @Body() { userEmail }: AddUserToOrgDTO,
+    @Req() req: Request,
+  ) {
     return this.organizationService.addUserToOrg({
+      // @ts-ignore-next-line
       orgId: req.user.id,
       userEmail,
     });
