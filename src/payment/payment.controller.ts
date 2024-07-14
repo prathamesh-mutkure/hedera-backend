@@ -6,8 +6,13 @@ import {
   Param,
   Delete,
   ParseIntPipe,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
+import { Request } from 'express';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('payment')
 export class PaymentController {
@@ -18,8 +23,12 @@ export class PaymentController {
     return this.paymentService.findOne(+id);
   }
 
-  @Get('user/:userId')
-  findByUser(@Param('userId', ParseIntPipe) userId: number) {
+  @Get('user/list')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  findByUser(@Req() req: Request) {
+    // @ts-ignore-next-line
+    const userId = req.user.id;
     return this.paymentService.findByUser({ userId });
   }
 
